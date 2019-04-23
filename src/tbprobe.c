@@ -210,11 +210,11 @@ static uint16_t from_be_u16(uint16_t x) {
 }
 
 #else
-
+/*
 static uint64_t from_le_u64(uint64_t x) {
   return x;
 }
-
+*/
 static uint32_t from_le_u32(uint32_t x) {
   return x;
 }
@@ -230,11 +230,11 @@ static uint64_t from_be_u64(uint64_t input) {
 static uint32_t from_be_u32(uint32_t input) {
   return bswap32(input);
 }
-
+/*
 static uint16_t from_be_u16(const uint16_t input) {
   return bswap16(input);
 }
-
+*/
 #endif
 
 inline static uint32_t read_le_u32(void *p)
@@ -359,10 +359,10 @@ static void unmap_file(void *data, map_t mapping)
 {
   if (!data) return;
   if (!UnmapViewOfFile(data)) {
-	  fprintf(stderr, "unmap failed, error code %d", GetLastError());
+	  fprintf(stderr, "unmap failed, error code %lu", GetLastError());
   }
   if (!CloseHandle((HANDLE)mapping)) {
-	  fprintf(stderr, "CloseHandle failed, error code %d", GetLastError());
+	  fprintf(stderr, "CloseHandle failed, error code %lu", GetLastError());
   }
 }
 #endif
@@ -565,7 +565,7 @@ int tb_probe_root_dtz(
     uint64_t knights,
     uint64_t pawns,
     unsigned rule50,
-    unsigned castling,
+    unsigned ,
     unsigned ep,
     bool     turn,
     bool     hasRepeated,
@@ -598,7 +598,7 @@ int tb_probe_root_wdl(
     uint64_t knights,
     uint64_t pawns,
     unsigned rule50,
-    unsigned castling,
+    unsigned ,
     unsigned ep,
     bool     turn,
     bool     useRule50,
@@ -1742,7 +1742,7 @@ int probe_table(const Pos *pos, int s, int *success, const int type)
   int p[TB_PIECES];
   size_t idx;
   int t = 0;
-  uint8_t flags;
+  uint8_t flags = 0;
 
   if (!be->hasPawns) {
     if (type == DTZ) {
@@ -1797,7 +1797,7 @@ int probe_table(const Pos *pos, int s, int *success, const int type)
                          ? ((uint16_t *)PAWN(be)->dtzMap)[PAWN(be)->dtzMapIdx[t][m] + v]
                           : ((uint16_t *)PIECE(be)->dtzMap)[PIECE(be)->dtzMapIdx[m] + v]);
     }
-    if (!(flags & PAFlags[s + 2]) || (s & 1))
+    if (!(flags & PAFlags[s + 2]) || (s & 1)) // warning on probably using flags before having written it, fixed the warning by flags = 0, but you shall see if it's a real problem of the code
       v *= 2;
   }
 
