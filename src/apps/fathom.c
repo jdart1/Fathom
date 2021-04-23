@@ -458,7 +458,6 @@ static void do_move(struct pos *pos, unsigned move)
 static void print_PV(struct pos *pos)
 {
     struct pos temp = *pos;
-    putchar('\n');
     bool first = true, check = false;
     if (!pos->turn)
     {
@@ -524,6 +523,24 @@ static bool print_moves(struct pos *pos, unsigned *results, bool prev,
 }
 
 /*
+ * Print the variable WDL results as ScidvsPC annotations.
+ */
+static void print_var(int *wdl)
+{
+    const char *wdl_sign = "-===+";
+    printf("{");
+    for (unsigned i = 0; i < 64; i++)
+    {
+        if (wdl[i] < 0) continue;
+        char sign = wdl_sign[wdl[i]];
+        char file = 'a' + (i % 8);
+        unsigned rank = 1 + i / 8;
+        printf("[%%draw %c,%c%u,purple]", sign, file, rank);
+    }
+    printf("}\n");
+}
+
+/*
  * Print the help message.
  */
 static void print_help(const char *prog)
@@ -539,6 +556,12 @@ static void print_help(const char *prog)
     printf("\t\tSet the tablebase PATH string.\n");
     printf("\t--test\n");
     printf("\t\tPrint the result only.  Useful for scripts.\n");
+    printf("\t--var=SQUARE\n");
+    printf("\t\tPrint the results (as ScidvsPC annotations) with the piece\n");
+    printf("\t\tin SQUARE as a variable, i.e., remove it from the board and\n");
+    printf("\t\tplace it back in every legal square. Each legal square is\n");
+    printf("\t\tannotated with + (win), - (loss), = (draw) for the player\n");
+    printf("\t\ton move. The FEN position must contain a piece in SQUARE.\n");
     printf("\n");
     printf("DESCRIPTION:\n");
     printf("\tThis program is a stand-alone Syzygy tablebase probe tool.  "
@@ -581,6 +604,7 @@ static void print_help(const char *prog)
 #define OPTION_HELP     0
 #define OPTION_PATH     1
 #define OPTION_TEST     2
+#define OPTION_VAR      3
 int main(int argc, char **argv)
 {
     static struct option long_options[] =
@@ -588,10 +612,12 @@ int main(int argc, char **argv)
         {"help", 0, 0, OPTION_HELP},
         {"path", 1, 0, OPTION_PATH},
         {"test", 0, 0, OPTION_TEST},
+        {"var",  1, 0, OPTION_VAR},
         {NULL, 0, 0, 0}
     };
     char *path = NULL;
     bool test = false;
+    uint64_t var_sq = 0;
     while (true)
     {
         int idx;
@@ -607,6 +633,13 @@ int main(int argc, char **argv)
                 break;
             case OPTION_TEST:
                 test = true;
+                break;
+            case OPTION_VAR:
+                if (optarg != NULL && optarg[0] >= 'a' && optarg[0] <= 'h'
+                  && optarg[1] >= '1' && optarg[1] <= '8' && optarg[2] == 0 )
+                    var_sq = board(( optarg[1] - '1' ) * 8 + optarg[0] - 'a');
+                else
+                    fprintf(stderr, "error: invalid var square [%s] (ignored)\n", optarg);
                 break;
             case OPTION_HELP:
             default:
@@ -642,6 +675,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "error: unable to parse FEN string \"%s\"\n", fen);
         exit(EXIT_FAILURE);
     }
+    if (var_sq && ((pos->white | pos->black) & var_sq) == 0)
+    {
+        fprintf(stderr, "error: var square is empty (ignored)\n");
+        var_sq = 0;
+    }
 
     // (2) probe the TB:
     if (tb_pop_count(pos->white | pos->black) > TB_LARGEST)
@@ -659,6 +697,53 @@ int main(int argc, char **argv)
         fprintf(stderr, "error: unable to probe tablebase; position "
             "invalid, illegal or not in tablebase\n");
         exit(EXIT_FAILURE);
+    }
+
+    // (2var) probe the TB for each legal placement of the piece in var_sq:
+    int var_wdl[64];
+    if (var_sq)
+    {
+        // copy pos
+        struct pos pos1 = pos0;
+        struct pos *var_pos = &pos1;
+        // get the color of piece in var_sq 
+        uint64_t *var_wb = NULL;
+        if (var_sq & var_pos->white) var_wb = &var_pos->white;
+        else var_wb = &var_pos->black;
+        // get the type of piece in var_sq
+        uint64_t *var_piece = NULL;
+        if      (var_sq & var_pos->kings)   var_piece = &var_pos->kings;
+        else if (var_sq & var_pos->queens)  var_piece = &var_pos->queens;
+        else if (var_sq & var_pos->rooks)   var_piece = &var_pos->rooks;
+        else if (var_sq & var_pos->bishops) var_piece = &var_pos->bishops;
+        else if (var_sq & var_pos->knights) var_piece = &var_pos->knights;
+        else                                var_piece = &var_pos->pawns;
+        // remove the piece in var_sq
+        *var_wb &= ~var_sq; *var_piece &= ~var_sq;
+        uint64_t occ1 = var_pos->white | var_pos->black;
+        // place the piece back in any legal sqauare and probe the TB
+        for (unsigned i = 0; i < 64; i++)
+        {
+            var_wdl[i] = -1;
+            uint64_t var_sq1 = board(i);
+            if (var_sq1 & occ1) continue;
+            // add the piece
+            *var_wb |= var_sq1; *var_piece |= var_sq1;
+            // probe the TB
+            unsigned var_results[TB_MAX_MOVES];
+            unsigned var_res = tb_probe_root(var_pos->white, var_pos->black,
+                var_pos->kings, var_pos->queens, var_pos->rooks,
+                var_pos->bishops, var_pos->knights, var_pos->pawns,
+                var_pos->rule50, var_pos->castling, var_pos->ep,
+                var_pos->turn, var_results);
+            if (var_res != TB_RESULT_FAILED)
+            {
+                var_wdl[i] = TB_GET_WDL(var_res);
+            }
+            //printf("i = %02u, var_wb = %016llx, var_piece = %016llx, res = %d\n", i, *var_wb, *var_piece, var_wdl[i]);
+            // remove the piece
+            *var_wb &= ~var_sq1; *var_piece &= ~var_sq1;
+        }
     }
 
     // (3) Output:
@@ -700,6 +785,8 @@ int main(int argc, char **argv)
     prev = false;
     print_moves(pos, results, prev, TB_LOSS);
     printf("\"]\n");
+    putchar('\n');
+    if (var_sq) print_var(var_wdl);
     print_PV(pos);
 
     struct TbRootMoves moves;
@@ -740,6 +827,10 @@ int main(int argc, char **argv)
 
       printf("%s rank = %d score=%d\n", str, m->tbRank, m->tbScore);
     }
+
+    // add an empty line such that the output of multiple runs can
+    // be concatenated in one PGN file
+    printf("\n");
     return 0;
 }
 
