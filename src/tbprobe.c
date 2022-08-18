@@ -120,6 +120,8 @@ typedef HANDLE map_t;
 #elif defined(_MSC_VER) && (_MSC_VER >= 1500) && defined(_M_AMD64)
 #include <nmmintrin.h>
 #define popcount(x)             (int)_mm_popcnt_u64((x))
+#elif __has_builtin(__builtin_popcountll)
+#define popcount(x) __builtin_popcountll((x))
 #else
 #define TB_SOFTWARE_POP_COUNT
 #endif
