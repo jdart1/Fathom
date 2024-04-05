@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2013-2018 Ronald de Man
 Copyright (c) 2015 basil00
-Modifications Copyright (c) 2016-2023 by Jon Dart
+Modifications Copyright (c) 2016-2024 by Jon Dart
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -447,7 +447,11 @@ struct BaseEntry {
   uint8_t *data[3];
   map_t mapping[3];
 #ifdef __cplusplus
+#if __cplusplus >= 202002L
+  atomic<bool> ready[3]({false, false, false});
+#else
   atomic<bool> ready[3];
+#endif
 #else
   atomic_bool ready[3];
 #endif
@@ -772,8 +776,10 @@ static void init_tb(char *str)
       TB_MaxCardinalityDTM = be->num;
     }
 
+  #if !defined(__cplusplus)
   for (int type = 0; type < 3; type++)
     atomic_init(&be->ready[type], false);
+  #endif
 
   if (!be->hasPawns) {
     int j = 0;
