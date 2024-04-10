@@ -448,7 +448,7 @@ struct BaseEntry {
   map_t mapping[3];
 #ifdef __cplusplus
 #if __cplusplus >= 202002L
-  atomic<bool> ready[3]({false, false, false});
+  atomic<bool> ready[3]{false, false, false};
 #else
   atomic<bool> ready[3];
 #endif
