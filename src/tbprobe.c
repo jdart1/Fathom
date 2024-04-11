@@ -776,10 +776,10 @@ static void init_tb(char *str)
       TB_MaxCardinalityDTM = be->num;
     }
 
-  #if !defined(__cplusplus)
+#if !defined(__cplusplus) || (__cplusplus < 202002L)
   for (int type = 0; type < 3; type++)
     atomic_init(&be->ready[type], false);
-  #endif
+#endif
 
   if (!be->hasPawns) {
     int j = 0;
