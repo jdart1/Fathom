@@ -2,7 +2,7 @@ MKDIR_P = mkdir -p
 RM      = rm
 INSTALL = install
 
-CC      = gcc
+CC     ?= gcc
 CFLAGS  = -std=gnu99 -O2 -Wall -Wshadow -Isrc
 LDFLAGS = $(CFLAGS)
 
