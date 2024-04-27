@@ -12,6 +12,16 @@ are:
 Fathom is compilable under either C99 or C++ and supports a variety of
 platforms, including at least Windows, Linux, and MacOS.
 
+Building the library
+--------------------
+It is possible to build and install Fathom as a shared library on Unix-like
+systems. Simple run the commands
+
+    make
+    make install
+
+in the top level directory.
+
 Tool
 ----
 
