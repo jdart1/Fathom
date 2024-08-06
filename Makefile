@@ -23,6 +23,7 @@ clean:
 
 install: libfathom.so
 	$(MKDIR_P) $(DESTDIR)$(LIBDIR)
+	$(MKDIR_P) $(DESTDIR)$(INCDIR)
 	$(INSTALL) -m 0644 libfathom.so $(DESTDIR)$(LIBDIR)
 	$(INSTALL) -m 0644 src/{stdendian,tbconfig,tbprobe}.h $(DESTDIR)$(INCDIR)
 
