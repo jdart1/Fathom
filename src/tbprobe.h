@@ -268,8 +268,6 @@ static inline unsigned tb_probe_wdl(
  * - DTZ tablebases can suggest unnatural moves, especially for losing
  *   positions.  Engines may prefer to traditional search combined with WDL
  *   move filtering using the alternative results array.
- * - This function is NOT thread safe.  For engines this function should only
- *   be called once at the root per search.
  */
 static inline unsigned tb_probe_root(
     uint64_t _white,
