@@ -488,6 +488,11 @@ struct PawnEntry {
 struct TbHashEntry {
   uint64_t key;
   struct BaseEntry *ptr;
+#ifdef __cplusplus
+  atomic<bool> error;
+#else
+  atomic_bool error;
+#endif
 };
 
 static int tbNumPiece, tbNumPawn;
@@ -725,6 +730,7 @@ static void add_to_hash(struct BaseEntry *ptr, uint64_t key)
 
   tbHash[idx].key = key;
   tbHash[idx].ptr = ptr;
+  atomic_init(&tbHash[idx].error, false);
 }
 
 #define pchr(i) piece_to_char[QUEEN - (i)]
@@ -1747,7 +1753,7 @@ int probe_table(const Pos *pos, int s, int *success, const int type)
   int hashIdx = key >> (64 - TB_HASHBITS);
   while (tbHash[hashIdx].key && tbHash[hashIdx].key != key)
     hashIdx = (hashIdx + 1) & ((1 << TB_HASHBITS) - 1);
-  if (!tbHash[hashIdx].ptr) {
+  if (!tbHash[hashIdx].ptr || atomic_load_explicit(&tbHash[hashIdx].error, memory_order_relaxed)) {
     *success = 0;
     return 0;
   }
@@ -1761,11 +1767,16 @@ int probe_table(const Pos *pos, int s, int *success, const int type)
   // Use double-checked locking to reduce locking overhead
   if (!atomic_load_explicit(&be->ready[type], memory_order_acquire)) {
     LOCK(tbMutex);
+    if (atomic_load_explicit(&tbHash[hashIdx].error, memory_order_relaxed)) {
+      *success = 0;
+      UNLOCK(tbMutex);
+      return 0;
+    }
     if (!atomic_load_explicit(&be->ready[type], memory_order_relaxed)) {
       char str[16];
       prt_str(pos, str, be->key != key);
       if (!init_table(be, str, type)) {
-        tbHash[hashIdx].ptr = NULL; // mark as deleted
+        atomic_store_explicit(&tbHash[hashIdx].error, true, memory_order_relaxed);
         *success = 0;
         UNLOCK(tbMutex);
         return 0;
