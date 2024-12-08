@@ -1734,7 +1734,7 @@ inline static int fill_squares(const Pos *pos, uint8_t *pc, bool flip, int mirro
   return i;
 }
 
-int probe_table(const Pos *pos, int s, int *success, const int type)
+static int probe_table(const Pos *pos, int s, int *success, const int type)
 {
   // Obtain the position's material-signature key
   uint64_t key = calc_key(pos,false);
