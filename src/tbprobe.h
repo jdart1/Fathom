@@ -169,7 +169,7 @@ extern unsigned TB_LARGEST;
  *   The tablebase PATH string.
  *
  * RETURN:
- * - true=succes, false=failed.  The TB_LARGEST global will also be
+ * - true=success, false=failed.  The TB_LARGEST global will also be
  *   initialized.  If no tablebase files are found, then `true' is returned
  *   and TB_LARGEST is set to zero.
  */
