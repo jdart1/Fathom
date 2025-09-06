@@ -1019,7 +1019,9 @@ void tb_free(void)
 {
   tb_init("");
   free(pieceEntry);
+  pieceEntry = NULL;
   free(pawnEntry);
+  pawnEntry = NULL;
 }
 
 static const int8_t OffDiag[] = {
