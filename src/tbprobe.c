@@ -704,8 +704,8 @@ static bool test_tb(const char *str, const char *suffix)
     size_t size = file_size(fd);
     close_tb(fd);
     if ((size & 63) != 16) {
-      fprintf(stderr, "Incomplete tablebase file %s.%s\n", str, suffix);
-      printf("info string Incomplete tablebase file %s.%s\n", str, suffix);
+      fprintf(stderr, "Incomplete tablebase file %s%s\n", str, suffix);
+      printf("info string Incomplete tablebase file %s%s\n", str, suffix);
       fd = FD_ERR;
     }
   }
