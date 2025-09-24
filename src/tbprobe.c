@@ -22,7 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifdef TB_ASSERT
+#define assert(x) TB_ASSERT(x)
+#else
 #include <assert.h>
+#endif
+
 #ifdef __cplusplus
 #include <atomic>
 #else
@@ -32,11 +37,15 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef __cplusplus
 #ifdef TB_NO_STDBOOL
-#typedef uint8 bool
+typedef uint8 bool
 #else
 #include <stdbool.h>
 #endif
+#endif
+
 #include "tbprobe.h"
 
 #define TB_PIECES 7
