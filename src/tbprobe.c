@@ -905,8 +905,25 @@ bool tb_init(const char *path)
   TB_MaxCardinality = TB_MaxCardinalityDTM = 0;
 
   if (!pieceEntry) {
+#if defined(__cplusplus) && (__cplusplus >= 202002L)
+    /* Fix crash with -std=c++20 by being consistent with BaseEntry initialization:
+
+        #if __cplusplus >= 202002L
+            atomic<bool> ready[3]{false, false, false};
+        #else
+            ...
+
+        C++ initialization does not work with malloc.
+        Also: with new, if the allocation fails we get std::bad_alloc exception,
+        which is better library behavior than just calling exit.
+     */
+
+    pieceEntry = new PieceEntry[TB_MAX_PIECE]();
+    pawnEntry = new PawnEntry[TB_MAX_PAWN]();
+#else
     pieceEntry = (struct PieceEntry*)malloc(TB_MAX_PIECE * sizeof(*pieceEntry));
     pawnEntry = (struct PawnEntry*)malloc(TB_MAX_PAWN * sizeof(*pawnEntry));
+#endif
     if (!pieceEntry || !pawnEntry) {
       fprintf(stderr, "Out of memory.\n");
       exit(EXIT_FAILURE);
@@ -1027,9 +1044,14 @@ finished:
 void tb_free(void)
 {
   tb_init("");
+#if defined __cplusplus && __cplusplus >= 202002L
+  delete[] pieceEntry;
+  delete[] pawnEntry;
+#else
   free(pieceEntry);
-  pieceEntry = NULL;
   free(pawnEntry);
+#endif
+  pieceEntry = NULL;
   pawnEntry = NULL;
 }
 
