@@ -113,10 +113,10 @@
 #define __ENDIAN_DEFINED        1
 #endif /* sun */
 
-/* Windows (also Emscripten) */
-#if defined(_WIN32) || defined(_MSC_VER) || defined(__EMSCRIPTEN__)
+/* Windows */
 /* assumes all Microsoft targets are little endian. */
 /* Emscripten (emcc) also currently assumes little endian. */
+#if defined(_WIN32) || defined(_MSC_VER) || defined(__EMSCRIPTEN__)
 #define _LITTLE_ENDIAN          1234
 #define _BIG_ENDIAN             4321
 #define _BYTE_ORDER             _LITTLE_ENDIAN
@@ -227,7 +227,7 @@ inline uint64_t bswap64(uint64_t x) {
 #define le16toh(x)              ((uint16_t)(x))
 
 #define htobe32(x)              bswap32((x))
-#define htole32(x)              ((uint32_t((x))
+#define htole32(x)              ((uint32_t)(x))
 #define be32toh(x)              bswap32((x))
 #define le32toh(x)              ((uint32_t)(x))
 
