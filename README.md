@@ -72,7 +72,7 @@ Chess engines
 Chess engines can use `tb_probe_wdl` to get the WDL value during
 search. This function is thread safe (unless TB_NO_THREADS is
 set). The various "probe_root" functions are intended for probing only
-at the root node, but are also theread-safe.
+at the root node, but are also thread-safe.
 
 Chess engines and other clients can modify some features of Fathom and
 override some of its internal functions by configuring
