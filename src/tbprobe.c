@@ -261,12 +261,23 @@ static uint16_t from_be_u16(const uint16_t input) {
 
 inline static uint32_t read_le_u32(void *p)
 {
-  return from_le_u32(*(uint32_t *)p);
+  // input may be unaligned, so read into stack allocated
+  // buffer, which should be aligned
+  // (prevents runtime errors from glibc)
+  unsigned char buffer[4];
+  memcpy(buffer, p, 4);
+  return from_le_u32(*(uint32_t *)buffer);
 }
 
 inline static uint16_t read_le_u16(void *p)
 {
-  return from_le_u16(*(uint16_t *)p);
+  // input may be unaligned, so read into stack allocated
+  // buffer, which should be aligned
+  // (prevents runtime errors from glibc)
+  unsigned char buffer[2];
+  buffer[0] = *((unsigned char*)p);
+  buffer[1] = *(((unsigned char*)p)+1);
+  return from_le_u16(*(uint16_t *)buffer);
 }
 
 static size_t file_size(FD fd) {
